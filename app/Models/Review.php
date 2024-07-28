@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Book;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Review extends Model
 {
@@ -11,6 +12,6 @@ class Review extends Model
 
     public function book()
     {
-        $this->belongsTo(Review::class);
+        return $this->belongsTo(Book::class);
     }
 }
