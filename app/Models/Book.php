@@ -24,18 +24,29 @@ class Book extends Model
         return $query->where('title', 'like', '%' . $title . '%');
     }
 
-    public function scopePopular(Builder $query, $from = null, $to = null): Builder
+    public function scopeWithReviewsCount(Builder $query, $from = null, $to = null): Builder
     {
-        return $query->withCount([
-            'reviews' => fn(Builder $q) => $this->dateRangeFilter($q, $from, $to),
-        ])->orderBy('reviews_count', 'desc');
+        return $query->withCount(['reviews' => function (Builder $q) use ($from, $to) {
+            return $this->dateRangeFilter($q, $from, $to);
+        }]);
     }
 
-    public function scopeHighestRated(Builder $query, $from = null, $to = null)
+    public function scopeWithAvgRating(Builder $query, $from = null, $to = null): Builder
     {
-        return $query->withAvg([
-            'reviews' => fn(Builder $q) => $this->dateRangeFilter($q, $from, $to),
-        ], 'rating')
+        return $query->withAvg(['reviews' => function (Builder $q) use ($from, $to) {
+            return $this->dateRangeFilter($q, $from, $to);
+        }], 'rating');
+    }
+
+    public function scopePopular(Builder $query): Builder
+    {
+        return $query->withReviewsCount()
+            ->orderBy('reviews_count', 'desc');
+    }
+
+    public function scopeHighestRated(Builder $query)
+    {
+        return $query->withAvgRating()
             ->orderBy('reviews_avg_rating', 'desc');
     }
 
@@ -44,16 +55,19 @@ class Book extends Model
         return $query->having('reviews_count', '>', $minReviews);
     }
 
-    private function dateRangeFilter(Builder $query, $from = null, $to = null)
-    {
-        if ($from && !$to) {
-            $query->where('created_at', '>=', $from);
-        } elseif (!$from && $to) {
-            $query->where('created_at', '<=', $to);
-        } elseif (!$from && !$to) {
-            $query->whereBetween('created_at', [$from, $to]);
-        }
+    private function dateRangeFilter(Builder $query, $from = null, $to = null): Builder
+{
+    if ($from && !$to) {
+        $query->where('created_at', '>=', $from);
+    } elseif (!$from && $to) {
+        $query->where('created_at', '<=', $to);
+    } elseif ($from && $to) {
+        $query->whereBetween('created_at', [$from, $to]);
     }
+
+    return $query;
+}
+
 
     public function scopePopularLastMonth(Builder $query)
     {
