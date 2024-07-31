@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Models\Book;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Review extends Model
 {
@@ -13,5 +13,11 @@ class Review extends Model
     public function book()
     {
         return $this->belongsTo(Book::class);
+    }
+
+    protected static function booted()
+    {
+        static::updated(fn(Review $review) => cache()->forget("Book:{$review->book_id}"));
+        static::deleted(fn(Review $review) => cache()->forget("Book:{$review->book_id}"));
     }
 }
